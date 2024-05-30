@@ -15,48 +15,37 @@ import org.json.JSONException
 import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
-    private var activeCampaign: Campaign? = null
+    private var activeCampaigns: MutableList<Campaign> = mutableListOf()
+    private val mobileDataCampaigns = listOf("carrosselHome1", "carrosselHome")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Obtenha uma instância do Evergage
         val evergage = Evergage.getInstance()
-
-        // Defina o ID do usuário autenticado assim que for conhecido
         evergage.setUserId("34522599862")
 
-        // Obtenha uma instância do Screen
         val screen: Screen? = Evergage.getInstance().getScreenForActivity(this)
 
-        // Registrar impressão
-        activeCampaign?.let { screen?.trackImpression(it) }
+        activeCampaigns.forEach { screen?.trackImpression(it) }
 
-        // Evento personalizado
         screen?.trackAction("visualizacao_detalhes_produto")
 
-        // Atributos do cliente / Individual
         evergage.setUserAttribute("idade", "35")
         evergage.setUserAttribute("ultimo_acesso", "2024-05-30")
         evergage.setUserAttribute("genero", "masculino")
 
-        // Atributos do cliente / Grupo
         evergage.setAccountAttribute("TipoCliente", "Teste")
         evergage.setAccountAttribute("segmento", "xpto")
         evergage.setAccountAttribute("classe", "D")
 
-        // Obtenha uma referência para o botão
         val button: Button = findViewById(R.id.my_button)
 
-        // Defina um ouvinte de clique para o botão
         button.setOnClickListener {
-            // Rastreie o evento de clique
             screen?.trackAction("button_click")
         }
 
         Log.d("customdebug", "onCreate chamado")
-        // Chame refreshScreen para inicializar o rastreamento de tela do Evergage
         refreshScreen()
     }
 
@@ -71,48 +60,53 @@ class MainActivity : AppCompatActivity() {
         featuredProductTextView.text = "Testeeee"
 
         val screen: Screen? = Evergage.getInstance().getScreenForActivity(this)
-        Log.d("customdebug", "inicio $screen")
+        Log.d("customdebug", "Screen instance: $screen")
 
         screen?.let {
             val handler = object : CampaignHandler {
                 override fun handleCampaign(campaign: Campaign) {
-                    Log.d("customdebug", "Entrou no método handleCampaign")
+                    Log.d("customdebug", "Entered handleCampaign method")
                     try {
                         val featuredProductName = campaign.data.optString("gaEventName")
+                        Log.d("customdebug", "Featured product name: $featuredProductName")
                         if (!featuredProductName.isNullOrEmpty()) {
-                            Log.d("customdebug", "gaEventName não é nulo ou vazio")
-                            if (activeCampaign == null || activeCampaign != campaign) {
-                                Log.d("customdebug", "activeCampaign é nulo ou diferente da campanha atual")
+                            if (activeCampaigns.none { it == campaign }) {
                                 screen.trackImpression(campaign)
+                                Log.d("customdebug", "Tracked campaign impression")
                                 if (!campaign.isControlGroup) {
-                                    activeCampaign = campaign
-                                    Log.d("customdebug", "Exibindo campanha: ${campaign.campaignName}, target: ${campaign.target}, data: ${campaign.data}")
+                                    activeCampaigns.add(campaign)
+                                    Log.d("customdebug", "Added campaign to active campaigns list")
 
-                                    // Atualize o TextView com os dados da campanha
                                     val textList: TextView = findViewById(R.id.textView)
                                     textList.text = campaign.data.toString()
 
-                                    // Configure o carrossel
                                     setupCarousel(campaign.data.toString())
 
                                     featuredProductTextView.text = "Our featured product is teste funcionou"
                                     val textView: TextView = findViewById(R.id.featuredProductTextView)
                                     textView.text = campaign.data.getString("url_banner")
+                                } else {
+                                    Log.d("customdebug", "Campaign is a control group")
                                 }
+                            } else {
+                                Log.d("customdebug", "Campaign is already active")
                             }
                         } else {
-                            Log.e("customdebug", "Campo 'featuredProductName' não encontrado ou vazio na campanha: ${campaign.campaignName}")
+                            Log.e("customdebug", "Featured product name is null or empty")
                         }
                     } catch (e: JSONException) {
-                        Log.e("customdebug", "Erro ao analisar JSON da campanha: ${campaign.campaignName}", e)
+                        Log.e("customdebug", "Error parsing campaign JSON", e)
                     }
                 }
             }
-            Log.d("customdebug", "Configurando handler de campanha")
-            screen.setCampaignHandler(handler, "carrosselHome1")
-            // Rastreie o evento de impressão ao carregar a tela
+            Log.d("customdebug", "Setting campaign handler")
+            mobileDataCampaigns.forEach { campaignName ->
+                screen.setCampaignHandler(handler, campaignName)
+                Log.d("customdebug", "Set campaign handler for campaign: $campaignName")
+            }
             screen.trackAction("screen_loaded")
-        } ?: Log.e("TAG", "Screen é null")
+            Log.d("customdebug", "Tracked screen loaded action")
+        } ?: Log.e("TAG", "Screen is null")
     }
 
     private fun setupCarousel(data: String) {
