@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
                                     activeCampaign = campaign
                                     Log.d("customdebug", "Exibindo campanha: ${campaign.campaignName}, target: ${campaign.target}, data: ${campaign.data}")
                                     featuredProductTextView.text = "Our featured product is teste funcionou"
-                                    val textView: TextView = findViewById(R.id.featured_product_text)
+                                    val textView: TextView = findViewById(R.id.featuredProductTextView)
                                     textView.text = campaign.data.getString("url_banner")
                                 }
                             }
