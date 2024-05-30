@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Sallesforce</string>
+    <string name="evergage_scheme">evgowqkc</string> <!-- Adicione esta linha -->
+</resources>
