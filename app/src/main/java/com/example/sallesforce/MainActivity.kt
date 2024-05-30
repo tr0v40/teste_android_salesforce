@@ -5,11 +5,14 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.evergage.android.Campaign
 import com.evergage.android.CampaignHandler
 import com.evergage.android.Evergage
 import com.evergage.android.Screen
 import org.json.JSONException
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
     private var activeCampaign: Campaign? = null
@@ -84,6 +87,14 @@ class MainActivity : AppCompatActivity() {
                                 if (!campaign.isControlGroup) {
                                     activeCampaign = campaign
                                     Log.d("customdebug", "Exibindo campanha: ${campaign.campaignName}, target: ${campaign.target}, data: ${campaign.data}")
+
+                                    // Atualize o TextView com os dados da campanha
+                                    val textList: TextView = findViewById(R.id.textView)
+                                    textList.text = campaign.data.toString()
+
+                                    // Configure o carrossel
+                                    setupCarousel(campaign.data.toString())
+
                                     featuredProductTextView.text = "Our featured product is teste funcionou"
                                     val textView: TextView = findViewById(R.id.featuredProductTextView)
                                     textView.text = campaign.data.getString("url_banner")
@@ -102,5 +113,27 @@ class MainActivity : AppCompatActivity() {
             // Rastreie o evento de impressão ao carregar a tela
             screen.trackAction("screen_loaded")
         } ?: Log.e("TAG", "Screen é null")
+    }
+
+    private fun setupCarousel(data: String) {
+        val items = extractData(data)
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        recyclerView.adapter = CarouselAdapter(items)
+    }
+
+    private fun extractData(jsonString: String): List<String> {
+        val jsonObject = JSONObject(jsonString)
+        val keys = jsonObject.keys()
+        val dataList = mutableListOf<String>()
+
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val value = jsonObject.getString(key)
+            dataList.add("$key: $value")
+        }
+
+        Log.d("customdebug", "DataList: $dataList")
+        return dataList
     }
 }
